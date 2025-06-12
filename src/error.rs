@@ -5,6 +5,7 @@ use axum::{
 };
 use serde_json::json;
 use thiserror::Error;
+use tracing::{error, warn, info};
 
 #[derive(Error, Debug)]
 pub enum AppError {
@@ -38,18 +39,30 @@ impl IntoResponse for AppError {
         let (status, error_message) = match &self {
             // Log detailed error but return generic message
             AppError::Database(e) => {
-                eprintln!("Database error: {}", e);
+                error!("Database error: {}", e);
                 (StatusCode::INTERNAL_SERVER_ERROR, "An internal server error occurred".to_string())
             }
             AppError::Env(e) => {
-                eprintln!("Environment error: {}", e);
+                error!("Environment error: {}", e);
                 (StatusCode::INTERNAL_SERVER_ERROR, "An internal server error occurred".to_string())
             }
             // These errors are safe to expose to the user
-            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg.clone()),
-            AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
-            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg.clone()),
-            AppError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
+            AppError::NotFound(msg) => {
+                warn!("Not found: {}", msg);
+                (StatusCode::NOT_FOUND, msg.clone())
+            }
+            AppError::BadRequest(msg) => {
+                warn!("Bad request: {}", msg);
+                (StatusCode::BAD_REQUEST, msg.clone())
+            }
+            AppError::Unauthorized(msg) => {
+                warn!("Unauthorized: {}", msg);
+                (StatusCode::UNAUTHORIZED, msg.clone())
+            }
+            AppError::Internal(msg) => {
+                error!("Internal error: {}", msg);
+                (StatusCode::INTERNAL_SERVER_ERROR, msg.clone())
+            }
         };
 
         let body = Json(json!({
