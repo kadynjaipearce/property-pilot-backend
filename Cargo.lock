@@ -2477,6 +2477,7 @@ dependencies = [
  "surrealdb",
  "thiserror 2.0.12",
  "tokio",
+ "tower-http",
 ]
 
 [[package]]
@@ -4039,6 +4040,7 @@ dependencies = [
  "tower",
  "tower-layer",
  "tower-service",
+ "tracing",
 ]
 
 [[package]]

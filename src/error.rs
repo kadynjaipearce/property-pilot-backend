@@ -10,7 +10,10 @@ use thiserror::Error;
 pub enum AppError {
     #[error("Database error: {0}")]
     Database(#[from] surrealdb::Error),
-
+    
+    #[error("Environment variable error: {0}")]
+    Env(#[from] std::env::VarError),
+    
     #[error("Not found: {0}")]
     NotFound(String),
     
@@ -38,6 +41,10 @@ impl IntoResponse for AppError {
                 eprintln!("Database error: {}", e);
                 (StatusCode::INTERNAL_SERVER_ERROR, "An internal server error occurred".to_string())
             }
+            AppError::Env(e) => {
+                eprintln!("Environment error: {}", e);
+                (StatusCode::INTERNAL_SERVER_ERROR, "An internal server error occurred".to_string())
+            }
             // These errors are safe to expose to the user
             AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg.clone()),
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
@@ -53,4 +60,5 @@ impl IntoResponse for AppError {
     }
 }
 
+// This is our custom Result type that we'll use throughout the application
 pub type Result<T> = std::result::Result<T, AppError>; 

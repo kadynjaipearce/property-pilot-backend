@@ -1,28 +1,43 @@
-mod database;
-mod error;
-
 use axum::{
-    extract::State,
     routing::get,
     Router,
+    response::IntoResponse,
 };
-use error::Result;
+use shuttle_runtime::SecretStore;
 
-// Example route that uses the database
-async fn hello_world(
-    State(db): State<database::database::Database>
-) -> Result<&'static str> {
+mod database;
+mod error;
+mod environments;
+mod handlers;
+mod models;
+mod routes;
 
-    Ok("Hello, world!")
+use crate::database::database::Database;
+use crate::environments::Environments;
+
+#[derive(Clone)]
+pub struct AppState {
+    db: Database,
+    env: Environments,
+}
+
+async fn default_route() -> impl IntoResponse {
+    "Welcome to Property Pilot API"
 }
 
 #[shuttle_runtime::main]
-async fn main() -> shuttle_axum::ShuttleAxum {
-    let db = database::database::Database::new("ws://localhost:8000").await?;
+async fn main(#[shuttle_runtime::Secrets] secrets: SecretStore) -> shuttle_axum::ShuttleAxum {
+    // Load environment variables
+    let env = Environments::from_secrets(&secrets);
 
-    let router = Router::new()
-        .route("/", get(hello_world))
-        .with_state(db);
+    // Initialize database
+    let db = Database::new(&env).await?;
 
-    Ok(router.into())
+    // Build our application with a route
+    let app = Router::new()
+        .route("/", get(default_route))
+        .nest("/users", routes::users::user_routes())
+        .with_state(AppState { db, env });
+
+    Ok(app.into())
 }

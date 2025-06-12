@@ -1,33 +1,32 @@
 use crate::error::AppError;
+use crate::environments::Environments;
 
-use surrealdb::{engine::remote::ws::Client, engine::remote::ws::Wss, opt::auth::Root, Surreal};
+use surrealdb::{engine::{remote::ws::{Client, Wss, Ws}}, opt::auth::Root, Surreal};
 
-#[derive(Clone)]
-#[allow(dead_code)]
+#[derive(Clone, Debug)]
 pub struct Database {
     client: Surreal<Client>,
 }
 
 impl Database {
-    #[allow(dead_code)]
-    pub async fn new(url: &str) -> Result<Self, AppError> {
-        let client = Surreal::new::<Wss>(url).await?;
+    pub async fn new(env: &Environments) -> Result<Self, AppError> {
+        let client = Surreal::new::<Ws>("127.0.0.1:8000").await?;
 
         client
             .signin(Root {
-                username: "test",
-                password: "test",
+                username: &env.database_user,
+                password: &env.database_password,
             })
             .await?;
 
-        client.use_ns("test").use_db("test").await?;
-
-        client.query("").await?;
+        client
+            .use_ns(&env.database_ns)
+            .use_db(&env.database_db)
+            .await?;
 
         Ok(Self { client })
     }
 
-    #[allow(dead_code)]
     pub fn client(&self) -> &Surreal<Client> {
         &self.client
     }
