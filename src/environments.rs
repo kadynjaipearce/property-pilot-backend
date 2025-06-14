@@ -8,16 +8,20 @@ pub struct Environments {
     pub database_password: String,
     pub database_ns: String,
     pub database_db: String,
+    pub auth0_domain: String,
+    pub auth0_audience: String,
 }
 
 impl Environments {
     pub fn from_secrets(secrets: &SecretStore) -> Self {
         Self {
             database_url: secrets.get("DATABASE_URL").expect("DATABASE_URL must be set"),
-            database_user: secrets.get("DATABASE_USER").expect("DATABASE_USER must be set"),
-            database_password: secrets.get("DATABASE_PASSWORD").expect("DATABASE_PASSWORD must be set"),
-            database_ns: secrets.get("DATABASE_NS").expect("DATABASE_NS must be set"),
-            database_db: secrets.get("DATABASE_DB").expect("DATABASE_DB must be set"),
+            database_user: secrets.get("DATABASE_USER").unwrap_or_else(|| "root".to_string()),
+            database_password: secrets.get("DATABASE_PASSWORD").unwrap_or_else(|| "root".to_string()),
+            database_ns: secrets.get("DATABASE_NS").unwrap_or_else(|| "test".to_string()),
+            database_db: secrets.get("DATABASE_DB").unwrap_or_else(|| "test".to_string()),
+            auth0_domain: secrets.get("AUTH0_DOMAIN").expect("AUTH0_DOMAIN must be set"),
+            auth0_audience: secrets.get("AUTH0_AUDIENCE").expect("AUTH0_AUDIENCE must be set"),
         }
     }
 } 
